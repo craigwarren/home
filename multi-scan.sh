@@ -1,10 +1,23 @@
 #!/bin/bash 
 duplex=false
 scan=true
-sargs="--resolution 150 -l 0 -t 0 -x 215 -y 279"
-while getopts "df:n:" optname
+resolution="--resolution 150"
+paper_size="-l 0 -t 0 -x 215 -y 279"
+
+while getopts "dhf:n:p:r:" optname
   do
+    echo "$optname"
     case "$optname" in
+      "h")
+        echo "multi-scan.sh <args>"
+        echo "-h help"
+        echo "-f filename"
+        echo "-n number of pages"
+        echo "-d duplex <false> (optional)"
+        echo "-r <number> resoltion (optional)"
+        echo "-p string page size (optional)"
+        exit 0
+        ;;
       "f")
         doc_name=$OPTARG
         ;;
@@ -13,6 +26,12 @@ while getopts "df:n:" optname
         ;;
       "n")
         num_pages=$OPTARG
+        ;;
+       "r")
+        resolution="--resolution $OPTARG"
+        ;;
+       "p")
+        paper_size="$OPTARG"
         ;;
       "N")
         scan=false
@@ -29,19 +48,18 @@ while getopts "df:n:" optname
         ;;
     esac
   done
-
+sargs="$resolution $paper_size"
 echo "Document name: $doc_name"
 echo "Number of Pages: $num_pages"
 echo "Duplex: $duplex"
 echo "Scan: $scan"
-
 if [ -d "$doc_name" ]
 then
     echo -n "$doc_name directory exists, delete (Y/n):"
     read d
     if [ $d ]
     then
-        if [ $d=="n" ]
+        if [ $d = "n" ]
         then
            echo "go there"
            exit 1 
@@ -76,8 +94,12 @@ then
     fi    
 else
     echo "Single sided"
-    scanimage $sargs -d hpaio:/usb/Officejet_J4500_series?serial=CN89S570KK052T  --batch-count=$pages_to_scan --batch-start=1 
+    #echo "scanimage $sargs -d hpaio:/usb/Officejet_J4500_series?serial=CN89S570KK052T  --batch-count=$num_pages --batch-start=1 "
+    scanimage $sargs -d hpaio:/usb/Officejet_J4500_series?serial=CN89S570KK052T  --batch-count=$num_pages --batch-start=1 
+    
 fi
 files=`ls -ur`
 convert $files ../$pdf_name
+cd ..
+rm -rf $doc_name
 
